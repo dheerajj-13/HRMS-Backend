@@ -1,8 +1,8 @@
 // src/middleware/validateKeycloakBeforeHRM.ts
 import jwt from "jsonwebtoken";
 import jwksClient from "jwks-rsa";
-import axios from "../../../Frontend/node_modules/axios";
 import { Request, Response, NextFunction } from "express";
+import axios from "axios";
 
 /**
  * Ensures employee's Keycloak token is valid before sending data to HRM.
