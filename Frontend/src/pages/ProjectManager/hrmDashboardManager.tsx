@@ -7,6 +7,8 @@ export default function HrmManagerDashboard() {
   const [hrmUrl, setHrmUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const tenant_code = import.meta.env.VITE_TENANT_CODE;
+  const backend_url = import.meta.env.VITE_API_BASE_URL;
 
   const navigate = useNavigate();
 
@@ -14,7 +16,7 @@ export default function HrmManagerDashboard() {
     const loadHrmUrl = async () => {
       try {
         const res = await fetch(
-          "http://localhost:4000/api/auth/go-to-hrm?tenantCode=DotSpeaks01-11",
+          `${backend_url}/auth/go-to-hrm?tenantCode=${tenant_code}`,
           {
             method: "GET",
             credentials: "include", // 🔥 must include cookies for auth
@@ -24,7 +26,7 @@ export default function HrmManagerDashboard() {
         console.log(res);
 
         const data = await res.json();
-        console.log(data);
+        console.log("the data",data);
 
         if (res.ok && data.redirectUrl) {
           setHrmUrl(data.redirectUrl);
