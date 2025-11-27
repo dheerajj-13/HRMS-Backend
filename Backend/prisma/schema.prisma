@@ -15,6 +15,7 @@ datasource db {
 }
 
 enum Role {
+  PROJECT_MANAGER
   MANAGER
   OPERATOR
 }

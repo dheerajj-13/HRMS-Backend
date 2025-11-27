@@ -64,6 +64,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
+import { toast, useToast } from "@/hooks/use-toast";
 
 interface Comment {
   id: string;
@@ -227,166 +228,169 @@ const TaskCommentPanel = ({
   const [newComment, setNewComment] = useState("");
 
   // Fetch comments
-const fetchComments = useCallback(async () => {
-  try {
-    const { data } = await axios.get<Comment[]>(
-      `${API_BASE_URL}/comments/${task.id}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
+  const fetchComments = useCallback(async () => {
+    try {
+      const { data } = await axios.get<Comment[]>(
+        `${API_BASE_URL}/comments/${task.id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // Sort all previous comments to show oldest first
+      const sortedComments = data.sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+
+      setComments(sortedComments);
+
+      // Automatically mark unseen comments as seen
+      const unseenComments = sortedComments.filter(
+        (c) =>
+          currentUserRole === "MANAGER" &&
+          !c.seenByManager &&
+          c.author.role !== "MANAGER"
+      );
+
+      if (unseenComments.length > 0) {
+        await axios.patch(
+          `${API_BASE_URL}/comments/${task.id}/seen`,
+          {}, // optional payload
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        // Update local state to reflect seen
+        setComments((prev) =>
+          prev.map((c) =>
+            unseenComments.find((u) => u.id === c.id)
+              ? { ...c, seenByManager: true }
+              : c
+          )
+        );
       }
-    );
-
-    // Sort all previous comments to show oldest first
-    const sortedComments = data.sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    );
-
-    setComments(sortedComments);
-
-    // Automatically mark unseen comments as seen
-    const unseenComments = sortedComments.filter(
-      (c) =>
-        currentUserRole === "MANAGER" &&
-        !c.seenByManager &&
-        c.author.role !== "MANAGER"
-    );
-
-    if (unseenComments.length > 0) {
-      await axios.patch(
-        `${API_BASE_URL}/comments/${task.id}/seen`,
-        {}, // optional payload
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      // Update local state to reflect seen
-      setComments((prev) =>
-        prev.map((c) =>
-          unseenComments.find((u) => u.id === c.id)
-            ? { ...c, seenByManager: true }
-            : c
-        )
-      );
+    } catch (err) {
+      console.error("Failed to fetch comments", err);
     }
-  } catch (err) {
-    console.error("Failed to fetch comments", err);
-  }
-}, [task.id, token, currentUserRole]);
+  }, [task.id, token, currentUserRole]);
 
   useEffect(() => {
     fetchComments();
   }, [fetchComments]);
 
-const handleAddComment = async () => {
-  if (!newComment.trim()) return;
+  const handleAddComment = async () => {
+    if (!newComment.trim()) return;
 
-  try {
-    const { data } = await axios.post<Comment>(
-      `${API_BASE_URL}/comments/${task.id}`,
-      { content: newComment },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    // Append new comment at the end
-    setComments((prev) => [...prev, data]);
-    setNewComment("");
-
-    // Optional: mark it as seen immediately for manager role
-    if (currentUserRole === "MANAGER" && data.author.role !== "MANAGER") {
-      setComments((prev) =>
-        prev.map((c) =>
-          c.id === data.id ? { ...c, seenByManager: true } : c
-        )
+    try {
+      const { data } = await axios.post<Comment>(
+        `${API_BASE_URL}/comments/${task.id}`,
+        { content: newComment },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
+
+      // Append new comment at the end
+      setComments((prev) => [...prev, data]);
+      setNewComment("");
+
+      // Optional: mark it as seen immediately for manager role
+      if (currentUserRole === "MANAGER" && data.author.role !== "MANAGER") {
+        setComments((prev) =>
+          prev.map((c) =>
+            c.id === data.id ? { ...c, seenByManager: true } : c
+          )
+        );
+      }
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: `Faild to add comment. Please try again.`,
+      });
     }
-  } catch (err) {
-    console.error(err);
-    alert("Failed to add comment");
-  }
-};
+  };
 
-return (
-  <div className="fixed right-6 bottom-6 w-96 h-[480px] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden z-50">
-    {/* Header */}
-    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3 flex items-center justify-between">
-      <h3 className="font-semibold text-sm truncate">{task.title} — Comments</h3>
-      <button
-        onClick={onClose}
-        className="hover:bg-white/20 rounded-full p-1 transition"
+  return (
+    <div className="fixed right-6 bottom-6 w-96 h-[480px] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden z-50">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3 flex items-center justify-between">
+        <h3 className="font-semibold text-sm truncate">
+          {task.title} — Comments
+        </h3>
+        <button
+          onClick={onClose}
+          className="hover:bg-white/20 rounded-full p-1 transition"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Chat Messages */}
+      <div
+        id="comment-container"
+        className="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50"
       >
-        ✕
-      </button>
-    </div>
+        {comments.length === 0 && (
+          <p className="text-center text-gray-400 text-sm mt-10">
+            No comments yet — start the conversation 👋
+          </p>
+        )}
 
-    {/* Chat Messages */}
-    <div
-      id="comment-container"
-      className="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50"
-    >
-      {comments.length === 0 && (
-        <p className="text-center text-gray-400 text-sm mt-10">
-          No comments yet — start the conversation 👋
-        </p>
-      )}
+        {comments.map((c) => {
+          const isOwnRole = c.author.role === currentUserRole;
+          const seen =
+            currentUserRole === "MANAGER" ? c.seenByManager : c.seenByAssignee;
+          const tickColor = seen ? "text-blue-500" : "text-gray-400";
 
-      {comments.map((c) => {
-        const isOwnRole = c.author.role === currentUserRole;
-        const seen =
-          currentUserRole === "MANAGER"
-            ? c.seenByManager
-            : c.seenByAssignee;
-        const tickColor = seen ? "text-blue-500" : "text-gray-400";
-
-        return (
-          <div
-            key={c.id}
-            className={`flex ${
-              isOwnRole ? "justify-end" : "justify-start"
-            }`}
-          >
+          return (
             <div
-              className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm shadow-sm relative ${
-                isOwnRole
-                  ? "bg-blue-600 text-white rounded-br-none"
-                  : "bg-gray-200 text-gray-800 rounded-bl-none"
-              }`}
+              key={c.id}
+              className={`flex ${isOwnRole ? "justify-end" : "justify-start"}`}
             >
-              <p className="break-words">{c.content}</p>
+              <div
+                className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm shadow-sm relative ${
+                  isOwnRole
+                    ? "bg-blue-600 text-white rounded-br-none"
+                    : "bg-gray-200 text-gray-800 rounded-bl-none"
+                }`}
+              >
+                <p className="break-words">{c.content}</p>
 
-              {/* Timestamp + Seen tick */}
-              <div className="flex items-center justify-end gap-1 text-[10px] mt-1 opacity-80">
-                <span>
-                  {new Date(c.createdAt).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-                {isOwnRole && <CheckIcon className={`h-3 w-3 ${tickColor}`} />}
+                {/* Timestamp + Seen tick */}
+                <div className="flex items-center justify-end gap-1 text-[10px] mt-1 opacity-80">
+                  <span>
+                    {new Date(c.createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  {isOwnRole && (
+                    <CheckIcon className={`h-3 w-3 ${tickColor}`} />
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
 
-    {/* Input Area */}
-    <div className="border-t border-gray-200 p-3 bg-white flex items-center gap-2">
-      <Input
-        placeholder="Type a message..."
-        value={newComment}
-        onChange={(e) => setNewComment(e.target.value)}
-        className="flex-1 bg-gray-100 focus-visible:ring-1 focus-visible:ring-blue-500 text-sm"
-      />
-      <Button
-        onClick={handleAddComment}
-        disabled={!newComment.trim()}
-        className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 rounded-xl shadow"
-      >
-        Send
-      </Button>
+      {/* Input Area */}
+      <div className="border-t border-gray-200 p-3 bg-white flex items-center gap-2">
+        <Input
+          placeholder="Type a message..."
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+          className="flex-1 bg-gray-100 focus-visible:ring-1 focus-visible:ring-blue-500 text-sm"
+        />
+        <Button
+          onClick={handleAddComment}
+          disabled={!newComment.trim()}
+          className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 rounded-xl shadow"
+        >
+          Send
+        </Button>
+      </div>
     </div>
-  </div>
-);
-
+  );
 };
 
 // --- Employee Task View ---
@@ -418,7 +422,10 @@ const EmployeeTaskView = ({
       await fetchEmployees();
     } catch (err) {
       console.error(err);
-      alert("Failed to delete task");
+      toast({
+        title: "Error",
+        description: `Faild to delete task. Please try again.`,
+      });
     } finally {
       setLoadingTasks(false);
     }
@@ -437,7 +444,10 @@ const EmployeeTaskView = ({
       await fetchEmployees();
     } catch (err) {
       console.error(err);
-      alert("Failed to transfer task");
+      toast({
+        title: "Error",
+        description: `Faild to transfer task. Please try again.`,
+      });
     } finally {
       setLoadingTasks(false);
     }
@@ -454,7 +464,10 @@ const EmployeeTaskView = ({
       await fetchEmployees();
     } catch (err) {
       console.error(err);
-      alert("Failed to update task priority");
+      toast({
+        title: "Error",
+        description: `Faild to update priority. Please try again.`,
+      });
     } finally {
       setLoadingTasks(false);
     }
@@ -693,6 +706,8 @@ export function EmployeeManagerDashboard() {
   const [activeTab, setActiveTab] = useState<"calendar" | "task">("task");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [role, setRole] = useState(null);
+  const { toast } = useToast();
 
   const [form, setForm] = useState({
     title: "",
@@ -705,6 +720,24 @@ export function EmployeeManagerDashboard() {
   });
 
   const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        console.log("fetchUser: ", res.data);
+        setRole(res.data.role.toLowerCase());
+      } catch (err) {
+        console.error("Failed to get user info");
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   // Fetch Employees with Tasks
   const fetchEmployees = useCallback(async () => {
@@ -775,8 +808,12 @@ export function EmployeeManagerDashboard() {
 
   // Create Task Logic
   const handleCreateTask = async () => {
-    if (!form.title.trim() || !form.assigneeEmployeeId) {
-      alert("Task Title and Assignee are required!");
+    if (!form.title.trim() || !form.assigneeEmployeeId || !form.dueDate) {
+      toast({
+        title: "Error",
+        description: "Task Title, Assignee, and Due Date are required!",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -800,7 +837,10 @@ export function EmployeeManagerDashboard() {
         },
       });
 
-      alert("Task created successfully!");
+      toast({
+        title: "Task Created Successfully",
+        description: `Task has been assigned successfully.`,
+      });
       setIsDialogOpen(false);
       resetForm();
       await fetchEmployees();
@@ -808,7 +848,11 @@ export function EmployeeManagerDashboard() {
       console.error(err);
       const errorMessage =
         err.response?.data?.error || "An unknown error occurred.";
-      alert(`Failed to create task: ${errorMessage}`);
+      toast({
+        title: "Error Creating Task",
+        description: `Failed to assign task: ${errorMessage}`,
+        variant: "destructive",
+      });
     } finally {
       setIsCreating(false);
     }
@@ -817,7 +861,7 @@ export function EmployeeManagerDashboard() {
   // Loading and Error States
   if (loading)
     return (
-      <Layout role="manager">
+      <Layout role={role}>
         <div className="flex items-center justify-center h-[calc(100vh-80px)]">
           <ThreeDot
             variant="bounce"
@@ -830,7 +874,7 @@ export function EmployeeManagerDashboard() {
 
   if (error)
     return (
-      <Layout role="manager">
+      <Layout role={role}>
         <div className="flex items-center justify-center h-[calc(100vh-80px)] p-6">
           <Card className="w-full max-w-lg p-6 text-center border-red-500 bg-red-50 shadow-xl">
             <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-600" />
@@ -858,7 +902,7 @@ export function EmployeeManagerDashboard() {
     );
 
   return (
-    <Layout role="manager">
+    <Layout role={role}>
       <div className="space-y-8 min-h-screen">
         {/* Header and Controls */}
         <div className="flex items-center justify-between border-b pb-4">
@@ -1029,6 +1073,8 @@ export function EmployeeManagerDashboard() {
                     disabled={
                       !form.title.trim() ||
                       !form.assigneeEmployeeId ||
+                      !form.dueDate ||
+                      !form.assignedHours ||
                       isCreating
                     }
                     className="bg-[#0000cc] hover:bg-[#0000cc]/90 text-white"

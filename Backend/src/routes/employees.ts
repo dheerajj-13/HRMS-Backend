@@ -10,7 +10,7 @@ const router = Router();
 // GET all employees (manager)
 
 // Get employees assigned to the logged-in manager
-router.get("/employees", auth, requireRole("MANAGER"), async (req, res) => {
+router.get("/employees", auth, requireRole("MANAGER", "PROJECT_MANAGER"), async (req, res) => {
   const managerId = req.user!.id;
 
   try {
@@ -108,7 +108,7 @@ router.post("/create", requireAuth, async (req, res) => {
 });
 
 // GET dashboard metrics
-router.get("/dashboard", auth, requireRole("MANAGER"), async (req, res) => {
+router.get("/dashboard", auth, requireRole("MANAGER", "PROJECT_MANAGER"), async (req, res) => {
   const managerId = req.user!.id;
 
   // Total employees
@@ -240,7 +240,7 @@ router.get("/me", auth, requireRole("OPERATOR"), async (req, res) => {
 });
 
 // Create employee + user (manager)
-router.post("/", auth, requireRole("MANAGER"), async (req, res) => {
+router.post("/", auth, requireRole("MANAGER", "PROJECT_MANAGER"), async (req, res) => {
   const { email, password, name, roleTitle, department } = req.body;
   if (!email || !password || !name)
     return res.status(400).json({ error: "email, password, name required" });
@@ -277,7 +277,7 @@ router.post("/", auth, requireRole("MANAGER"), async (req, res) => {
 });
 
 // performace
-router.get("/performance", auth, requireRole("MANAGER"), async (req, res) => {
+router.get("/performance", auth, requireRole("MANAGER", "PROJECT_MANAGER"), async (req, res) => {
   try {
     const managerId = req.user!.id;
 
@@ -331,7 +331,7 @@ router.get("/performance", auth, requireRole("MANAGER"), async (req, res) => {
  * ✅ 2️⃣ Get full performance details of one employee
  * Used when clicking on an employee from the left list
  */
-router.get("/:employeeId", auth, requireRole("MANAGER"), async (req, res) => {
+router.get("/:employeeId", auth, requireRole("MANAGER", "PROJECT_MANAGER"), async (req, res) => {
   try {
     const { employeeId } = req.params;
 
@@ -411,7 +411,7 @@ router.get("/:employeeId", auth, requireRole("MANAGER"), async (req, res) => {
 router.get(
   "/:employeeId/performance",
   auth,
-  requireRole("MANAGER"),
+  requireRole("MANAGER", "PROJECT_MANAGER"),
   async (req, res) => {
     try {
       const { employeeId } = req.params;

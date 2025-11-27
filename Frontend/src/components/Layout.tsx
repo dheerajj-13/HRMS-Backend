@@ -15,7 +15,7 @@ import {
 
 interface LayoutProps {
   children: ReactNode;
-  role?: "manager" | "operator";
+  role?: "manager" | "operator" | "project_manager";
 }
 
 export const Layout = ({ children, role }: LayoutProps) => {
@@ -39,17 +39,29 @@ export const Layout = ({ children, role }: LayoutProps) => {
       return [
         ...common,
         // The path names need to be updated to match the components created earlier
-        { icon: Users, label: "Employees", path: "/manager/tasks" }, // Uses EmployeeManagerDashboard
-        { icon: BarChart3, label: "Performance", path: "/manager/performance" }, // Uses EmployeePerformanceDashboard
+        { icon: Users, label: "Employees", path: "/tasks" }, // Uses EmployeeManagerDashboard
+        { icon: Clock, label: "My Task", path: "/timesheet" },
+        { icon: BarChart3, label: "Performance", path: "/performance" }, // Uses EmployeePerformanceDashboard
         { icon: FileText, label: "Reports", path: "/manager/reports" }, // Uses TeamReportsDashboard
         { icon: PersonStandingIcon, label: "My HRM", path: "/manager/hrm" }, // Uses TeamReportsDashboard
+      ];
+    }
+
+      if (role === "project_manager") {
+      return [
+        ...common,
+        // The path names need to be updated to match the components created earlier
+        { icon: Users, label: "Managers", path: "/tasks" }, // Uses EmployeeManagerDashboard
+        { icon: BarChart3, label: "Performance", path: "/performance" }, // Uses EmployeePerformanceDashboard
+        { icon: FileText, label: "Reports", path: "/manager/reports" }, // Uses TeamReportsDashboard
+        // { icon: PersonStandingIcon, label: "My HRM", path: "/manager/hrm" }, // Uses TeamReportsDashboard
       ];
     }
 
     if (role === "operator") {
       return [
         ...common,
-        { icon: Clock, label: "My Task", path: "/operator/timesheet" },
+        { icon: Clock, label: "My Task", path: "/timesheet" },
         { icon: PersonStanding, label: "My HRM", path: "/operator/hrm" },
       ];
     }

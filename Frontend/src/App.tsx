@@ -14,6 +14,7 @@ import TeamReportsDashboard from "./pages/ProjectManager/Report";
 import EmployeeTaskTimeline from "./pages/Timeline";
 import HrmDashboard from "./pages/hrmDashboard";
 import HrmManagerDashboard from "./pages/ProjectManager/hrmDashboardManager";
+import MainDashboard from "./pages/MainManager/mainDashboard";
 
 const queryClient = new QueryClient();
 
@@ -27,12 +28,13 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/manager" element={<ManagerDashboard />} />
-          <Route path="/manager/tasks" element={<EmployeeManagerDashboard />} />
-          <Route path="/manager/performance" element={<EmployeePerformanceDashboard/>} />
+          <Route path="/project_manager" element={<MainDashboard />} />
+          <Route path="/tasks" element={<EmployeeManagerDashboard />} />
+          <Route path="/performance" element={<EmployeePerformanceDashboard/>} />
           <Route path="/manager/reports" element={<TeamReportsDashboard/>} />
           <Route path="/manager/hrm" element={<HrmManagerDashboard/> } />
           <Route path="/operator" element={<OperatorDashboard />} />
-          <Route path="/operator/timesheet" element={<EmployeeTaskTimeline />} />
+          <Route path="/timesheet" element={<EmployeeTaskTimeline />} />
           <Route path="/operator/hrm" element={<HrmDashboard/> } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

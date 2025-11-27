@@ -45,13 +45,35 @@ import {
   Line,
 } from "recharts";
 import { ThreeDot} from 'react-loading-indicators';
+import axios from "axios";
 
 export default function ManagerDashboard() {
   const [isCreateEmpOpen, setIsCreateEmpOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<any>(null);
+  const [role, setRole] = useState(null);
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+    const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        console.log("fetchUser: ", res.data);
+        setRole(res.data.role.toLowerCase());
+      } catch (err) {
+        console.error("Failed to get user info");
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   useEffect(() => {
     async function fetchDashboard() {
@@ -76,7 +98,7 @@ export default function ManagerDashboard() {
   if (loading) {
     return (
       // 1. Always render the Layout
-      <Layout role="manager">
+      <Layout role="project_manager">
         {/* 2. Center the loader within the content area */}
         <div className="flex items-center justify-center h-[calc(100vh-80px)]"> 
           <ThreeDot 
@@ -91,7 +113,7 @@ export default function ManagerDashboard() {
       </Layout>
     );
   }
-  if (!dashboardData) return <Layout role="manager">
+  if (!dashboardData) return <Layout role="project_manager">
       <div className="flex items-center justify-center h-[calc(100vh-80px)] p-6">
         <Card className="w-full max-w-lg p-6 text-center border-red-500 bg-red-50 shadow-xl">
           <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-600" />
@@ -123,12 +145,12 @@ export default function ManagerDashboard() {
   } = dashboardData;
 
   return (
-    <Layout role="manager">
+    <Layout role="project_manager">
     <div className="space-y-8 min-h-screen">
       {/* Header */}
       <div className="flex items-center justify-between border-b pb-4">
         <div>
-          <h1 className="text-3xl font-bold text-[#0000cc]">Manager Dashboard</h1>
+          <h1 className="text-3xl font-bold text-[#0000cc]">Project Manager Dashboard</h1>
           <p className="text-gray-500">Manage team, track performance, and assign tasks</p>
         </div>
         <Dialog open={isCreateEmpOpen} onOpenChange={setIsCreateEmpOpen}>

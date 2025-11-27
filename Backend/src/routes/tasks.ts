@@ -22,7 +22,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 router.post(
   "/create",
   auth,
-  requireRole("MANAGER"),
+  requireRole("MANAGER", "PROJECT_MANAGER"),
   upload.single("file"),
   async (req, res) => {
     const {
@@ -135,7 +135,8 @@ router.patch("/:id/priority", auth, async (req, res) => {
   const task = await prisma.task.findUnique({ where: { id } });
   if (!task) return res.status(404).json({ error: "task not found" });
 
-  const isManager = req.user!.role === "MANAGER";
+  const role = req.user!.role as string;
+  const isManager = role === "MANAGER" || role === "PROJECT_MANAGER";
   const isOwner = task.assigneeId === req.user!.id;
 
   if (!isManager && !isOwner)
@@ -150,7 +151,7 @@ router.patch("/:id/priority", auth, async (req, res) => {
 });
 
 // Transfer task (manager only)
-router.post("/:id/transfer", auth, requireRole("MANAGER"), async (req, res) => {
+router.post("/:id/transfer", auth, requireRole("MANAGER", "PROJECT_MANAGER"), async (req, res) => {
   const { id } = req.params;
   console.log(id);
   const { newAssigneeUserId, newEmployeeId } = req.body;
@@ -175,7 +176,7 @@ router.post("/:id/transfer", auth, requireRole("MANAGER"), async (req, res) => {
   res.json(updated);
 });
 
-router.delete("/:id", auth, requireRole("MANAGER"), async (req, res) => {
+router.delete("/:id", auth, requireRole("MANAGER", "PROJECT_MANAGER"), async (req, res) => {
   const { id } = req.params;
   if (!id) return res.status(400).json({ error: "task id required" });
 

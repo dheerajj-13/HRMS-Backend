@@ -4,6 +4,7 @@ import * as jwt from "jsonwebtoken";
 import prisma from "../db";
 import { ensureFreshKeycloakToken } from "../middleware/validateKeycloakBeforeHRM";
 import axios from "axios";
+import { auth } from "../middleware/auth";
 
 const router = Router();
 
@@ -55,7 +56,7 @@ router.post("/login", async (req, res) => {
       username: email,
       password,
     });
-    console.log("token url: ", body)
+    console.log("token url: ", body);
 
     let kc;
     try {
@@ -63,9 +64,11 @@ router.post("/login", async (req, res) => {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
       kc = data;
-      console.log(data)
+      console.log(data);
     } catch (err: any) {
-      return res.status(401).json({ error: "Invalid credentials (Keycloak)", err });
+      return res
+        .status(401)
+        .json({ error: "Invalid credentials (Keycloak)", err });
     }
 
     // 2️⃣ Decode Keycloak access token to extract info
@@ -156,10 +159,25 @@ router.post("/token", async (req, res) => {
   }
 });
 
+router.get("/me", auth, async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    return res.json({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    });
+  } catch (error) {}
+});
+
 router.get("/go-to-hrm", ensureFreshKeycloakToken, async (req, res) => {
   try {
     const { tenantCode } = req.query;
-    const backend_url = process.env.HRM_BACKEND_ROUTE
+    const backend_url = process.env.HRM_BACKEND_ROUTE;
 
     if (!tenantCode)
       return res.status(400).json({ error: "tenantCode is required" });

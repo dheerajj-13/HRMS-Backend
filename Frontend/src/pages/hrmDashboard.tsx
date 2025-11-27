@@ -1,7 +1,10 @@
 import { Layout } from "@/components/Layout";
+import axios from "axios";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function HrmDashboard() {
   const [hrmUrl, setHrmUrl] = useState<string | null>(null);
@@ -10,6 +13,27 @@ export default function HrmDashboard() {
   const navigate = useNavigate();
   const tenant_code = import.meta.env.VITE_TENANT_CODE;
   const backend_url = import.meta.env.VITE_API_BASE_URL;
+  const [role, setRole] = useState(null);
+
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        console.log("fetchUser: ", res.data);
+        setRole(res.data.role.toLowerCase());
+      } catch (err) {
+        console.error("Failed to get user info");
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   useEffect(() => {
     const loadHrmUrl = async () => {
@@ -25,12 +49,12 @@ export default function HrmDashboard() {
         console.log(res);
 
         const data = await res.json();
-        console.log("the data",data);
+        console.log("the data", data);
 
         if (res.ok && data.redirectUrl) {
           setHrmUrl(data.redirectUrl);
-        } else if(data.error == "Session expired, login again.") {
-          navigate("/login")
+        } else if (data.error == "Session expired, login again.") {
+          navigate("/login");
         }
       } catch (err: any) {
         console.error("Failed to load HRM URL:", err);
@@ -47,7 +71,7 @@ export default function HrmDashboard() {
   if (error) return <p className="text-red-600">Error: {error}</p>;
 
   return (
-<Layout role="operator">
+    <Layout role={role}>
       <div className="w-full h-[calc(100vh-4rem)] flex items-center justify-center p-0 m-0">
         {loading ? (
           <div className="flex flex-col items-center justify-center text-gray-600">
@@ -69,7 +93,6 @@ export default function HrmDashboard() {
               display: "block",
             }}
             allow="fullscreen *; geolocation *"
-            
           />
         ) : (
           <p className="text-gray-500 text-sm">No HRM Dashboard available.</p>

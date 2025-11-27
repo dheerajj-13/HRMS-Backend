@@ -123,7 +123,7 @@ const StatusIcon = ({ status }: { status: Task["status"] }) => {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // --- Task Timeline View ---
-const TaskTimelineView = () => {
+const TaskTimelineView = ({ role }: { role: any }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
   const [loading, setLoading] = useState(false);
@@ -136,7 +136,13 @@ const TaskTimelineView = () => {
   const fetchTasks = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE_URL}/tasks/EmployeeTasks`);
+      let res: any;
+      res =
+        role === "OPERATOR"
+          ? await axios.get(`${API_BASE_URL}/tasks/EmployeeTasks`)
+          : await axios.get(`${API_BASE_URL}/projectManager/ManagerTasks`);
+      // if(role == "MANAGER")
+      // const res = await axios.get(`${API_BASE_URL}/tasks/EmployeeTasks`);
       setTasks(res.data.tasks);
     } catch (err) {
       console.error("Failed to fetch tasks", err);
@@ -656,9 +662,24 @@ export default function EmployeeTaskTimeline() {
   const [activeTab, setActiveTab] = useState<"timeline" | "calendar">(
     "timeline"
   );
+  const [role, setRole] = useState(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/auth/me`);
+        console.log("fetchUser: ", res.data);
+        setRole(res.data.role.toLowerCase());
+      } catch (err) {
+        console.error("Failed to get user info");
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   return (
-    <Layout role="operator">
+    <Layout role={role}>
       <div className="space-y-8 p-6">
         <Card className={`p-6 shadow-lg border-[${COLOR_PRIMARY}]/20`}>
           <Tabs
@@ -718,7 +739,7 @@ export default function EmployeeTaskTimeline() {
             </div>
 
             <TabsContent value="timeline" className="m-0">
-              <TaskTimelineView />
+              <TaskTimelineView role={role} />
             </TabsContent>
             <TabsContent value="calendar" className="m-0">
               <CompletedCalendarView />
