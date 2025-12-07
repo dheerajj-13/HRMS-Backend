@@ -63,7 +63,7 @@ const SkeletonManagerDashboard = ({ PRIMARY_COLOR }) => {
   // Helper component for a team row placeholder
   const TeamRowSkeleton = () => (
     <div className="p-4 rounded-lg border border-gray-100 bg-white animate-pulse">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4 flex-1">
           <div className="h-12 w-12 rounded-full bg-gray-300"></div>
           <div className="flex-1 space-y-1">
@@ -100,7 +100,7 @@ const SkeletonManagerDashboard = ({ PRIMARY_COLOR }) => {
         </div>
 
         {/* Skeleton Charts */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           <Card className="p-6 border border-gray-200/50 shadow-sm h-[320px] animate-pulse">
             <div className="h-5 w-48 bg-gray-200 rounded mb-4"></div>
             <div className="h-[250px] w-full bg-gray-100 rounded-lg"></div>
@@ -279,12 +279,7 @@ export default function ManagerDashboard() {
             </p>
           </div>
           <Dialog open={isCreateEmpOpen} onOpenChange={setIsCreateEmpOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2 bg-[#D70707] hover:bg-[#D70707]/90 text-white rounded-lg shadow-md">
-                <Plus className="h-4 w-4" />
-                Create Employee
-              </Button>
-            </DialogTrigger>
+            <DialogTrigger asChild></DialogTrigger>
             <DialogContent className="bg-white rounded-xl shadow-xl">
               <DialogHeader>
                 <DialogTitle className="text-[#0000cc]">
@@ -372,37 +367,52 @@ export default function ManagerDashboard() {
         </div>
 
         {/* Charts */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="p-6 border border-[#0000cc]/20 shadow-sm hover:shadow-md transition-all">
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="px-3 py-4 sm:p-6 border border-[#0000cc]/20 shadow-sm hover:shadow-md transition-all">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="h-5 w-5 text-red-500" />
               <h3 className="text-lg font-semibold text-[#0000cc]">
                 Weekly Hours Overview
               </h3>
             </div>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={weeklyData}>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart
+                data={weeklyData}
+                margin={{ top: 5, right: 5, left: -10, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="day" stroke="#666" />
-                <YAxis stroke="#666" />
+                <XAxis dataKey="day" stroke="#666" tick={{ fontSize: 10 }} />
+                <YAxis
+                  stroke="#666"
+                  tick={{ fontSize: 10 }}
+                  domain={[0, Math.max(...weeklyData.map((d) => d.hours)) + 5]}
+                />
                 <Tooltip />
-                <Bar dataKey="hours" fill="#0000cc" radius={[6, 6, 0, 0]} />
+                <Bar
+                  dataKey="hours"
+                  fill="#0000cc"
+                  barSize={32}
+                  radius={[6, 6, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </Card>
 
-          <Card className="p-6 border border-[#0000cc]/20 shadow-sm hover:shadow-md transition-all">
+          <Card className="px-3 py-4 sm:p-6 border border-[#0000cc]/20 shadow-sm hover:shadow-md transition-all">
             <div className="flex items-center gap-2 mb-4">
               <CheckCircle2 className="h-5 w-5 text-red-500" />
               <h3 className="text-lg font-semibold text-[#0000cc]">
                 Task Completion Trend
               </h3>
             </div>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={performanceData}>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart
+                data={performanceData}
+                margin={{ top: 5, right: 5, left: -10, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="week" stroke="#666" />
-                <YAxis stroke="#666" />
+                <XAxis dataKey="week" stroke="#666" tick={{ fontSize: 10 }} />
+                <YAxis stroke="#666" tick={{ fontSize: 10 }} />
                 <Tooltip />
                 <Line
                   type="monotone"
@@ -418,17 +428,18 @@ export default function ManagerDashboard() {
 
         {/* Team Overview */}
         <Card className="p-6 border border-[#0000cc]/20 shadow-md">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
+            Search employees...
             <h3 className="text-lg font-semibold text-[#0000cc]">
               Team Overview
             </h3>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <Input
                 placeholder="Search employees..."
-                className="w-64 border-gray-300"
+                className="w-full sm:w-64 border-gray-300"
               />
               <Select>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-full sm:w-32">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -446,7 +457,7 @@ export default function ManagerDashboard() {
                 key={emp.id}
                 className="p-4 rounded-lg border border-gray-200 hover:border-[#0000cc]/40 transition-all bg-white hover:shadow-md"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-4 flex-1">
                     <div className="h-12 w-12 rounded-full bg-[#0000cc] flex items-center justify-center text-white font-semibold">
                       {emp.name

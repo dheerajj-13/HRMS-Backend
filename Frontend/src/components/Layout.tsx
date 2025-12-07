@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import {
@@ -9,6 +9,8 @@ import {
   LogOut,
   Clock,
   PersonStanding,
+  Menu, 
+  X, 
 } from "lucide-react";
 import { useAuth } from "@/pages/AuthContext";
 
@@ -16,12 +18,18 @@ interface LayoutProps {
   children: ReactNode;
 }
 
+// --- LOGO VARIABLES ---
+const DESKTOP_LOGO_URL = "https://i0.wp.com/dotspeaks.com/wp-content/uploads/2025/07/Dotspeaks-logo_bg.png?fit=2560%2C591&ssl=1";
+// Placeholder for mobile logo based on your image
+const MOBILE_LOGO_PLACEHOLDER = "D"; 
+// ----------------------
+
 export const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, loading, setUser } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // ✅ Stop flicker
   if (loading) return <div className="p-6">Loading...</div>;
   if (!user) return <div className="p-6">Unauthorized</div>;
 
@@ -40,38 +48,38 @@ export const Layout = ({ children }: LayoutProps) => {
   };
 
   const getNavItems = () => {
+    // ... (Navigation logic remains the same)
     const common = [
-      { icon: LayoutDashboard, label: "Dashboard", path: `/${role}` },
+        { icon: LayoutDashboard, label: "Dashboard", path: `/${role}` },
     ];
 
     if (role === "manager") {
-      return [
-        ...common,
-        { icon: Users, label: "Employees", path: "/tasks" },
-        { icon: Clock, label: "My Task", path: "/timesheet" },
-        { icon: BarChart3, label: "Performance", path: "/performance" },
-        { icon: FileText, label: "Reports", path: "/manager/reports" },
-        { icon: PersonStanding, label: "My HRM", path: "/manager/hrm" },
-      ];
+        return [
+          ...common,
+          { icon: Users, label: "Employees", path: "/tasks" },
+          { icon: Clock, label: "My Task", path: "/timesheet" },
+          { icon: BarChart3, label: "Performance", path: "/performance" },
+          { icon: FileText, label: "Reports", path: "/manager/reports" },
+          { icon: PersonStanding, label: "My HRM", path: "/manager/hrm" },
+        ];
     }
 
     if (role === "project_manager") {
-      return [
-        ...common,
-        { icon: Users, label: "Managers", path: "/tasks" },
-        { icon: BarChart3, label: "Performance", path: "/performance" },
-        { icon: PersonStanding, label: "Employee Assign", path: "/project_manager/employee-assignment" },
-        { icon: FileText, label: "Reports", path: "/manager/reports" },
-      ];
+        return [
+          ...common,
+          { icon: Users, label: "Managers", path: "/tasks" },
+          { icon: BarChart3, label: "Performance", path: "/performance" },
+          { icon: PersonStanding, label: "Employee Assign", path: "/project_manager/employee-assignment" },
+          { icon: FileText, label: "Reports", path: "/manager/reports" },
+        ];
     }
 
     if (role === "operator") {
-      return [
-        ...common,
-        { icon: Clock, label: "My Task", path: "/timesheet" },
-        { icon: PersonStanding, label: "My HRM", path: "/operator/hrm" },
-        
-      ];
+        return [
+          ...common,
+          { icon: Clock, label: "My Task", path: "/timesheet" },
+          { icon: PersonStanding, label: "My HRM", path: "/operator/hrm" },
+        ];
     }
 
     return [];
@@ -80,26 +88,50 @@ export const Layout = ({ children }: LayoutProps) => {
   const navItems = getNavItems();
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 z-40 h-screen w-60 bg-[#2a00b7] text-white flex flex-col shadow-lg">
-        {/* Logo */}
+    // Set min-h-screen on the overall container
+    <div className="min-h-screen bg-background"> 
+      
+      {/* 🔴 MOBILE HEADER (Hamburger left, Logo right) 🔴 */}
+      <header className="lg:hidden sticky top-0 z-50 bg-white shadow-md p-4 flex items-center justify-between">
+        {/* Hamburger Icon (Left) */}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="text-[#2a00b7] hover:bg-gray-100 order-1" 
+        >
+          {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </Button>
+        {/* Mobile Logo (Right) */}
+        <div className="h-8 w-8 bg-red-600 rounded-full flex items-center justify-center text-white text-lg font-bold order-2"> 
+             {MOBILE_LOGO_PLACEHOLDER} 
+        </div>
+      </header>
+
+      {/* 🔵 SIDEBAR - **Fixed on all screen sizes** except for the translate property 🔵 */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-60 bg-[#2a00b7] text-white flex flex-col shadow-lg 
+          transform transition-transform duration-300 ease-in-out
+          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          lg:translate-x-0 lg:w-60 lg:h-screen`} // Removed lg:static
+      >
+        {/* Desktop Logo */}
         <div className="flex items-center justify-center h-20 border-b border-white/20">
           <img
-            src="https://i0.wp.com/dotspeaks.com/wp-content/uploads/2025/07/Dotspeaks-logo_bg.png?fit=2560%2C591&ssl=1"
+            src={DESKTOP_LOGO_URL}
             alt="Logo"
             className="w-40"
           />
         </div>
 
-        {/* Navigation */}
+        {/* Navigation - Uses flex-1 and overflow-y-auto to allow scrolling *inside* the sidebar if needed */}
         <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
 
             return (
-              <Link key={item.path} to={item.path}>
+              <Link key={item.path} to={item.path} onClick={() => setIsSidebarOpen(false)}>
                 <div
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium cursor-pointer transition-all duration-200 ${
                     isActive
@@ -147,13 +179,22 @@ export const Layout = ({ children }: LayoutProps) => {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="lg:ml-64 min-h-screen">
+      {/* Backdrop for mobile */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        ></div>
+      )}
+
+      {/* 🟢 MAIN CONTENT - **Handles the left margin offset on large screens** 🟢 */}
+      {/* Scrollable content area starts here */}
+      <main className="lg:ml-60 flex-1 overflow-y-auto min-h-screen">
         <div
           className={
             location.pathname.includes("/hrm")
-              ? "pt-6 pl-2 pr-6"
-              : "p-8"
+              ? "pt-6 pl-2 pr-6" 
+              : "p-4 sm:p-6 md:p-8"
           }
         >
           {children}

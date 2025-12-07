@@ -33,7 +33,6 @@ import {
   ChevronDown,
 } from "lucide-react";
 import axios from "axios";
-// Removed ThreeDot import
 
 // --- DUMMY STATIC DATA (for new employees) ---
 const DUMMY_NEW_EMPLOYEES = [
@@ -60,70 +59,71 @@ const DUMMY_NEW_EMPLOYEES = [
   },
 ];
 
-// Helper component for Manager/Employee details
+// Helper component for Manager/Employee details (Responsive text size)
 const DetailItem = ({ icon: Icon, label, value }) => (
-  <div className="flex items-center space-x-2 text-sm text-gray-600">
-    <Icon className="h-4 w-4 text-red-500" />
+  <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600">
+    <Icon className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
     <span className="font-medium">{label}:</span>
     <span>{value}</span>
   </div>
 );
 const backendUrl = import.meta.env.VITE_API_BASE_URL;
 
-// --- NEW SKELETON LOADER COMPONENT ---
+// --- NEW SKELETON LOADER COMPONENT (Updated for responsiveness) ---
 const SkeletonAssignmentDashboard = ({ PRIMARY_COLOR, ACCENT_RED }) => {
   // Replicating the structure of the two main columns
   const ManagerSkeletonCard = () => (
-    <Card className="p-4 border border-gray-100 shadow-sm animate-pulse h-40">
+    // Responsive height/padding
+    <Card className="p-3 sm:p-4 border border-gray-100 shadow-sm animate-pulse h-36 sm:h-40">
       <div className="flex justify-between pb-2">
         <div className="space-y-2">
-          <div className="h-5 w-32 bg-gray-200 rounded"></div>
-          <div className="h-3 w-24 bg-gray-200 rounded"></div>
+          <div className="h-4 w-24 sm:w-32 bg-gray-200 rounded"></div>
+          <div className="h-3 w-20 sm:w-24 bg-gray-200 rounded"></div>
         </div>
-        <div className="h-6 w-16 bg-gray-300 rounded-full"></div>
+        <div className="h-5 w-12 bg-gray-300 rounded-full"></div>
       </div>
       <div className="space-y-3 pt-2">
         <div className="flex justify-between border-b pb-2">
-          <div className="h-4 w-28 bg-gray-200 rounded"></div>
-          <div className="h-5 w-10 bg-gray-300 rounded"></div>
+          <div className="h-3 w-20 sm:w-28 bg-gray-200 rounded"></div>
+          <div className="h-4 w-8 bg-gray-300 rounded"></div>
         </div>
-        <div className="h-8 w-full bg-gray-200 rounded-md"></div>
-        <div className="h-10 w-full bg-gray-100 rounded-lg"></div>
+        <div className="h-7 w-full bg-gray-200 rounded-md"></div>
+        <div className="h-8 w-full bg-gray-100 rounded-lg"></div>
       </div>
     </Card>
   );
 
   const EmployeeSkeletonCard = () => (
-    <Card className="p-4 border border-gray-100 shadow-sm flex items-center justify-between animate-pulse h-24">
-      <div className="space-y-2">
-        <div className="h-5 w-32 bg-gray-200 rounded"></div>
-        <div className="h-3 w-40 bg-gray-100 rounded"></div>
+    <Card className="p-3 sm:p-4 border border-gray-100 shadow-sm flex items-center justify-between animate-pulse h-20 sm:h-24">
+      <div className="space-y-1">
+        <div className="h-4 w-24 sm:w-32 bg-gray-200 rounded"></div>
+        <div className="h-3 w-32 sm:w-40 bg-gray-100 rounded"></div>
       </div>
-      <div className="h-8 w-20 bg-blue-200/50 rounded-md"></div>
+      <div className="h-7 w-16 sm:w-20 bg-blue-200/50 rounded-md"></div>
     </Card>
   );
 
   return (
     <Layout>
-      <div className="space-y-8 min-h-screen">
-        {/* Skeleton Header */}
-        <div className="flex items-center justify-between border-b pb-4 animate-pulse">
+      <div className="space-y-6 sm:space-y-8 p-4 sm:p-6 min-h-screen">
+        {/* Skeleton Header - Responsive Stack */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b pb-3 sm:pb-4 animate-pulse">
           <div>
-            <div className="h-8 w-80 bg-gray-300 rounded"></div>
-            <div className="h-4 w-96 bg-gray-200 rounded mt-2"></div>
+            <div className="h-7 w-64 sm:w-80 bg-gray-300 rounded mb-1"></div>
+            <div className="h-3 w-full sm:w-96 bg-gray-200 rounded mt-2"></div>
           </div>
-          <div className="h-10 w-48 bg-red-200 rounded-lg"></div>
+          <div className="h-9 w-full sm:w-48 bg-red-200 rounded-lg mt-3 sm:mt-0"></div>
         </div>
 
-        {/* Skeleton Columns */}
+        {/* Skeleton Columns - Responsive Stack */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 1. New Employees Skeleton Column */}
-          <Card className="p-6 col-span-1 border border-red-500/40 shadow-xl bg-red-50/50">
+          <Card className="p-4 sm:p-6 col-span-1 border border-red-500/40 shadow-xl bg-red-50/50">
             <div className="flex items-center gap-2 mb-4 border-b pb-3 animate-pulse">
-              <UserPlus className="h-6 w-6 text-red-400" />
-              <div className="h-6 w-48 bg-red-200 rounded"></div>
+              <UserPlus className="h-5 w-5 sm:h-6 sm:w-6 text-red-400" />
+              <div className="h-6 w-32 sm:w-48 bg-red-200 rounded"></div>
             </div>
-            <div className="space-y-4 max-h-[600px] pr-2">
+            <div className="space-y-3 sm:space-y-4 max-h-[400px] lg:max-h-[600px] overflow-y-auto pr-2">
               {Array.from({ length: 3 }).map((_, i) => (
                 <EmployeeSkeletonCard key={i} />
               ))}
@@ -132,13 +132,13 @@ const SkeletonAssignmentDashboard = ({ PRIMARY_COLOR, ACCENT_RED }) => {
 
           {/* 2. Manager List Skeleton Column */}
           <Card
-            className={`p-6 lg:col-span-2 border border-[${PRIMARY_COLOR}]/40 shadow-xl bg-blue-50/50`}
+            className={`p-4 sm:p-6 lg:col-span-2 border border-[${PRIMARY_COLOR}]/40 shadow-xl bg-blue-50/50`}
           >
             <div className="flex items-center gap-2 mb-4 border-b pb-3 animate-pulse">
-              <Users className="h-6 w-6 text-blue-400" />
-              <div className="h-6 w-64 bg-blue-200 rounded"></div>
+              <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
+              <div className="h-6 w-48 sm:w-64 bg-blue-200 rounded"></div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] pr-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[400px] lg:max-h-[600px] overflow-y-auto pr-2">
               {Array.from({ length: 4 }).map((_, i) => (
                 <ManagerSkeletonCard key={i} />
               ))}
@@ -225,8 +225,6 @@ export default function AssignmentDashboard() {
     );
   }
 
-  // Core Dashboard Logic (toggleManagerExpansion, handleAssignEmployee, openAssignmentDialog) remains the same
-
   const toggleManagerExpansion = (managerId) => {
     setManagers(
       managers.map((m) =>
@@ -284,25 +282,25 @@ export default function AssignmentDashboard() {
     setIsDialogOpen(true);
   };
 
-  // Manager Card component
+  // Manager Card component (Responsive updates applied)
   const ManagerCard = ({ manager }) => {
     const isFull = manager.teamSize >= manager.maxCapacity;
 
     return (
       <Card
-        className={`p-4 border ${
+        className={`p-3 sm:p-4 border ${
           manager.isExpanded ? `border-[${PRIMARY_COLOR}]` : "border-gray-200"
         } hover:shadow-md transition-all shadow-sm`}
       >
         <CardHeader className="flex flex-row items-start justify-between p-0 pb-2">
           <div className="flex flex-col">
-            <CardTitle className="text-xl font-bold text-gray-800">
+            <CardTitle className="text-base sm:text-xl font-bold text-gray-800">
               {manager.name}
             </CardTitle>
-            <p className="text-sm text-gray-500">{manager.role}</p>
+            <p className="text-xs sm:text-sm text-gray-500">{manager.role}</p>
           </div>
           <Badge
-            className={`font-semibold`}
+            className={`font-semibold text-xs`}
             style={{ backgroundColor: PRIMARY_COLOR, color: "white" }}
           >
             Manager
@@ -312,16 +310,16 @@ export default function AssignmentDashboard() {
         <CardContent className="p-0 space-y-3 pt-2">
           <div className="flex items-center justify-between border-b pb-2">
             <div className="flex items-center space-x-2">
-              <Users className="h-5 w-5 text-red-500" />
-              <span className="font-semibold text-gray-700">Team Size:</span>
+              <Users className="h-4 w-4 text-red-500" />
+              <span className="font-semibold text-sm text-gray-700">Team Size:</span>
             </div>
             <div
-              className="text-lg font-bold"
+              className="text-base font-bold"
               style={{ color: isFull ? ACCENT_RED : PRIMARY_COLOR }}
             >
               {manager.teamSize} / {manager.maxCapacity}{" "}
               {isFull && (
-                <Badge variant="destructive" className="ml-2 text-xs">
+                <Badge variant="destructive" className="ml-1 text-[10px]">
                   FULL
                 </Badge>
               )}
@@ -331,19 +329,19 @@ export default function AssignmentDashboard() {
           <Button
             variant="ghost"
             onClick={() => toggleManagerExpansion(manager.id)}
-            className="w-full justify-start h-8 text-sm text-gray-700 "
+            className="w-full justify-start h-7 text-xs sm:text-sm text-gray-700 p-0"
           >
-            <List className="h-4 w-4 mr-2" style={{ color: PRIMARY_COLOR }} />
+            <List className="h-3 w-3 sm:h-4 sm:w-4 mr-2" style={{ color: PRIMARY_COLOR }} />
             View Team Members ({manager.teamMembers.length})
             <ChevronDown
-              className={`h-4 w-4 ml-auto transition-transform ${
+              className={`h-3 w-3 sm:h-4 sm:w-4 ml-auto transition-transform ${
                 manager.isExpanded ? "rotate-180" : "rotate-0"
               }`}
             />
           </Button>
 
           {manager.isExpanded && (
-            <div className="mt-3 p-3 border rounded-lg bg-white max-h-40 overflow-y-auto space-y-1">
+            <div className="mt-3 p-2 border rounded-lg bg-white max-h-32 overflow-y-auto space-y-1">
               {manager.teamMembers.length > 0 ? (
                 manager.teamMembers.map((member) => (
                   <div
@@ -358,14 +356,14 @@ export default function AssignmentDashboard() {
                     </span>
                     <Badge
                       variant="secondary"
-                      className="text-xs bg-gray-100 text-gray-600"
+                      className="text-[10px] bg-gray-100 text-gray-600"
                     >
                       {member.role}
                     </Badge>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-gray-500 text-center py-2">
+                <p className="text-xs text-gray-500 text-center py-2">
                   No members in this team yet.
                 </p>
               )}
@@ -376,23 +374,23 @@ export default function AssignmentDashboard() {
     );
   };
 
-  // New Employee Card component
+  // New Employee Card component (Responsive updates applied)
   const EmployeeCard = ({ employee }) => (
-    <Card className="p-4 border border-red-200 hover:border-red-500/40 transition-all shadow-sm flex items-center justify-between">
+    <Card className="p-3 sm:p-4 border border-red-200 hover:border-red-500/40 transition-all shadow-sm flex items-center justify-between">
       <div className="space-y-1">
-        <CardTitle className="text-lg font-semibold text-gray-800">
+        <CardTitle className="text-base sm:text-lg font-semibold text-gray-800 truncate max-w-[200px]">
           {employee.name}
         </CardTitle>
         <DetailItem icon={ClipboardList} label="Role" value={employee.role} />
         <DetailItem
           icon={Users}
-          label="Department"
+          label="Dept" // Shortened label for mobile
           value={employee.department}
         />
       </div>
       <Button
         onClick={() => openAssignmentDialog(employee)}
-        className={`flex items-center gap-1 text-white shadow-md hover:opacity-90`}
+        className={`flex items-center gap-1 text-white shadow-md hover:opacity-90 h-8 text-xs sm:text-sm px-3`}
         style={{ backgroundColor: PRIMARY_COLOR }}
       >
         <ArrowRight className="h-4 w-4" />
@@ -403,20 +401,20 @@ export default function AssignmentDashboard() {
 
   return (
     <Layout>
-      <div className="space-y-8 min-h-screen">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b pb-4">
+      <div className="space-y-6 sm:space-y-8 p-4 sm:p-6 min-h-screen">
+        {/* Header - Responsive Stack */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b pb-3 sm:pb-4">
           <div>
-            <h1 className="text-3xl font-bold" style={{ color: PRIMARY_COLOR }}>
+            <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: PRIMARY_COLOR }}>
               Employee Assignment Dashboard
             </h1>
-            <p className="text-gray-500">
+            <p className="text-sm sm:text-base text-gray-500">
               Assign new employees to the appropriate team manager after
               reviewing team capacity.
             </p>
           </div>
           <Button
-            className={`gap-2 text-white rounded-lg shadow-md hover:opacity-90`}
+            className={`gap-2 text-white rounded-lg shadow-md hover:opacity-90 text-sm h-9 w-full sm:w-auto mt-3 sm:mt-0`}
             style={{ backgroundColor: ACCENT_RED }}
           >
             <UserPlus className="h-4 w-4" />
@@ -427,22 +425,23 @@ export default function AssignmentDashboard() {
         {/* --- Main Dashboard Content: Columns --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 1. New Employees Column (Source - Red/Accent) */}
-          <Card className="p-6 col-span-1 border border-red-500/40 shadow-xl bg-red-50">
+          <Card className="p-4 sm:p-6 col-span-1 border border-red-500/40 shadow-xl bg-red-50">
             <div className="flex items-center gap-2 mb-4 border-b pb-3">
-              <UserPlus className="h-6 w-6 text-red-600" />
-              <h2 className="text-xl font-bold text-red-600">
+              <UserPlus className="h-5 w-5 text-red-600" />
+              <h2 className="text-lg sm:text-xl font-bold text-red-600">
                 New Joiners ({newEmployees.length})
               </h2>
             </div>
-            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+            {/* Scrollable Area - Fixed height on mobile to prevent consuming screen space */}
+            <div className="space-y-3 sm:space-y-4 max-h-[400px] lg:max-h-[600px] overflow-y-auto pr-2">
               {newEmployees.length > 0 ? (
                 newEmployees.map((emp) => (
                   <EmployeeCard key={emp.id} employee={emp} />
                 ))
               ) : (
-                <div className="text-center p-8 bg-white rounded-lg border border-green-300">
-                  <Zap className="h-8 w-8 text-green-500 mx-auto mb-3" />
-                  <p className="text-lg font-semibold text-green-700">
+                <div className="text-center p-6 sm:p-8 bg-white rounded-lg border border-green-300">
+                  <Zap className="h-6 w-6 text-green-500 mx-auto mb-3" />
+                  <p className="text-base font-semibold text-green-700">
                     All new employees have been assigned!
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
@@ -455,26 +454,27 @@ export default function AssignmentDashboard() {
 
           {/* 2. Manager List Column (Target - Blue/Primary) */}
           <Card
-            className={`p-6 lg:col-span-2 border border-[${PRIMARY_COLOR}]/40 shadow-xl bg-blue-50`}
+            className={`p-4 sm:p-6 lg:col-span-2 border border-[${PRIMARY_COLOR}]/40 shadow-xl bg-blue-50`}
           >
             <div className="flex items-center gap-2 mb-4 border-b pb-3">
-              <Users className="h-6 w-6" style={{ color: PRIMARY_COLOR }} />
+              <Users className="h-5 w-5" style={{ color: PRIMARY_COLOR }} />
               <h2
-                className="text-xl font-bold"
+                className="text-lg sm:text-xl font-bold"
                 style={{ color: PRIMARY_COLOR }}
               >
                 Available Managers ({managers.length})
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto pr-2">
+            {/* Scrollable Grid Area - Fixed height on mobile */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[400px] lg:max-h-[600px] overflow-y-auto pr-2">
               {managers.length > 0 ? (
                 managers.map((manager) => (
                   <ManagerCard key={manager.id} manager={manager} />
                 ))
               ) : (
                 <div className="col-span-full text-center p-8 bg-white rounded-lg border border-gray-300">
-                  <List className="h-8 w-8 text-gray-500 mx-auto mb-3" />
-                  <p className="text-lg font-semibold text-gray-700">
+                  <List className="h-6 w-6 text-gray-500 mx-auto mb-3" />
+                  <p className="text-base font-semibold text-gray-700">
                     No Managers Reporting to you Found.
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
@@ -487,23 +487,24 @@ export default function AssignmentDashboard() {
         </div>
       </div>
 
-      {/* --- Assignment Dialog (Modal) --- */}
+      {/* --- Assignment Dialog (Modal) - RESPONSIVE --- */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-white rounded-xl shadow-2xl max-w-lg">
+        {/* Dialog Content takes up more space on small screens */}
+        <DialogContent className="w-11/12 max-w-[95vw] sm:max-w-lg bg-white rounded-xl shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl" style={{ color: PRIMARY_COLOR }}>
+            <DialogTitle className="text-xl sm:text-2xl" style={{ color: PRIMARY_COLOR }}>
               Assign Employee to Manager
             </DialogTitle>
-            <CardDescription className="pt-2">
+            <CardDescription className="pt-2 text-sm">
               Confirm the manager for **{selectedEmployee?.name}** (
               {selectedEmployee?.role}).
             </CardDescription>
           </DialogHeader>
 
           <div className="space-y-4 pt-4">
-            <div className="flex items-center justify-between p-3 rounded-md border bg-gray-50">
+            <div className="flex items-center justify-between p-3 rounded-md border bg-gray-50 text-sm">
               <span className="font-medium text-gray-700">Employee:</span>
-              <Badge className="bg-red-100 text-red-700 border border-red-300">
+              <Badge className="bg-red-100 text-red-700 border border-red-300 text-xs">
                 {selectedEmployee?.name}
               </Badge>
             </div>
@@ -516,7 +517,7 @@ export default function AssignmentDashboard() {
                 onValueChange={setSelectedManagerId}
                 value={selectedManagerId}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full h-10">
                   <SelectValue placeholder="Choose a manager to assign to" />
                 </SelectTrigger>
                 <SelectContent>
@@ -537,13 +538,13 @@ export default function AssignmentDashboard() {
           </div>
 
           <DialogFooter className="mt-6">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="text-sm h-9">
               Cancel
             </Button>
             <Button
               onClick={handleAssignEmployee}
               disabled={!selectedManagerId}
-              className={`gap-2 text-white shadow-md`}
+              className={`gap-2 text-white shadow-md text-sm h-9`}
               style={{
                 backgroundColor: PRIMARY_COLOR,
                 opacity: selectedManagerId ? 1 : 0.6,

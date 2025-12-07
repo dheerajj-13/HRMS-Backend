@@ -56,7 +56,7 @@ router.post("/login", async (req, res) => {
       username: email,
       password,
     });
-    console.log("token url: ", body);
+    console.log("token url: ", tokenUrl);
 
     let kc;
     try {
