@@ -10,13 +10,13 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  setUser: (user: User | null) => void; 
+  setUser: (user: User | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  setUser: () => {},
+  setUser: () => { },
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -26,6 +26,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const getUser = async () => {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
       try {
         const res = await axios.get(
           `${import.meta.env.VITE_API_BASE_URL}/auth/me`,
@@ -41,7 +45,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     getUser();
-  }, []);
+  }, [token]);
 
   return (
     <AuthContext.Provider value={{ user, loading, setUser }}>

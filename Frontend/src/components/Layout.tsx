@@ -87,7 +87,15 @@ export const Layout = ({ children }: LayoutProps) => {
     updateNotifications();
   };
 
-  if (loading) return <div className="p-6">Loading...</div>;
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-screen text-gray-500 space-y-4">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2a00b7]"></div>
+      <p>Connecting to server...</p>
+      <p className="text-sm text-gray-400 max-w-sm text-center">
+        (If this takes longer than 30s, the free server is waking up. usually takes ~1 min)
+      </p>
+    </div>
+  );
   if (!user) return <div className="p-6">Unauthorized</div>;
 
   const role = user.role.toLowerCase();
