@@ -96,7 +96,13 @@ export const Layout = ({ children }: LayoutProps) => {
       </p>
     </div>
   );
-  if (!user) return <div className="p-6">Unauthorized</div>;
+  if (!user) {
+    // Redirect to login if not authenticated
+    useEffect(() => {
+      navigate("/login");
+    }, []);
+    return null;
+  }
 
   const role = user.role.toLowerCase();
   const handleLogout = async () => {
