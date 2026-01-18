@@ -23,7 +23,7 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: ["http://localhost:8080", "https://flowbit.dotspeaks.com", "http://194.163.139.103:4001", "http://localhost:5000", "http://localhost:8082"], // your frontend origin
+    origin: ["http://localhost:8080", "https://flowbit.dotspeaks.com", "http://194.163.139.103:4001", "http://localhost:5000", "http://localhost:8082", "https://hrms-frontend-dtkor7rba-dheerajs-projects-612828a9.vercel.app", "https://hrms-frontend-five.vercel.app"], // your frontend origin
     credentials: true, // ✅ allows cookies
   })
 );
