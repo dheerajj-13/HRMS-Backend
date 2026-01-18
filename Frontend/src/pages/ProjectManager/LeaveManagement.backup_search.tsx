@@ -1,0 +1,320 @@
+import { useState, useEffect } from "react";
+import { Layout } from "@/components/Layout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { format } from "date-fns";
+import axios from "axios";
+import { toast } from "sonner";
+import { Check, X, Download } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea"; // Assuming this exists as seen in LeaveApplication
+import { Label } from "@/components/ui/label";
+
+interface Employee {
+    name: string;
+    roleTitle: string;
+    department: string;
+}
+
+interface LeaveRequest {
+    id: string;
+    employee: Employee;
+    reason: string;
+    startDate: string;
+    endDate: string;
+    status: "PENDING" | "APPROVED" | "DECLINED";
+    createdAt: string;
+    managerRemarks?: string; // Added field
+}
+
+import { createNotification } from "@/lib/notificationSystem";
+
+const LeaveManagement = () => {
+    const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    // Dialog State
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [selectedLeaveId, setSelectedLeaveId] = useState<string | null>(null);
+    const [actionType, setActionType] = useState<"APPROVED" | "DECLINED" | null>(null);
+    const [remarks, setRemarks] = useState("");
+
+    useEffect(() => {
+        fetchLeaves();
+        window.addEventListener('storage', fetchLeaves);
+        return () => window.removeEventListener('storage', fetchLeaves);
+    }, []);
+
+    const fetchLeaves = () => {
+        setLoading(true);
+        try {
+            let storedLeaves = localStorage.getItem("mock_leaves");
+
+            if (!storedLeaves || JSON.parse(storedLeaves).length === 0) {
+                const demoLeave = {
+                    id: "demo-leave-1",
+                    employeeId: "emp-123", // Keep consistent with updated LeaveApplication logic if possible, but this is just fallback
+                    employee: {
+                        name: "John Doe",
+                        roleTitle: "Software Engineer",
+                        department: "Engineering"
+                    },
+                    reason: "Family Vacation (Demo)",
+                    startDate: new Date().toISOString(),
+                    endDate: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(),
+                    status: "PENDING",
+                    createdAt: new Date().toISOString()
+                };
+                const initialData = [demoLeave];
+                localStorage.setItem("mock_leaves", JSON.stringify(initialData));
+                storedLeaves = JSON.stringify(initialData);
+            }
+
+            if (storedLeaves) {
+                setLeaves(JSON.parse(storedLeaves));
+            } else {
+                setLeaves([]);
+            }
+        } catch (error) {
+            console.error("Failed to fetch leaves", error);
+            toast.error("Failed to fetch leave requests");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const openActionDialog = (id: string, type: "APPROVED" | "DECLINED") => {
+        setSelectedLeaveId(id);
+        setActionType(type);
+        setRemarks(""); // Reset remarks
+        setIsDialogOpen(true);
+    };
+
+    const handleConfirmAction = async () => {
+        if (!selectedLeaveId || !actionType) return;
+        await handleStatusUpdate(selectedLeaveId, actionType, remarks);
+        setIsDialogOpen(false);
+        setSelectedLeaveId(null);
+        setActionType(null);
+    };
+
+    const handleStatusUpdate = async (id: string, status: "APPROVED" | "DECLINED", remarks: string) => {
+        try {
+            const text = localStorage.getItem("mock_leaves");
+            if (!text) return;
+
+            const currentLeaves = JSON.parse(text);
+            const updatedLeaves = currentLeaves.map((leave: any) => {
+                if (leave.id === id) {
+                    return { ...leave, status, managerRemarks: remarks };
+                }
+                return leave;
+            });
+
+            localStorage.setItem("mock_leaves", JSON.stringify(updatedLeaves));
+
+            const targetLeave = updatedLeaves.find((l: any) => l.id === id);
+            if (targetLeave && targetLeave.employeeId) {
+                const remarkText = remarks ? ` Remarks: ${remarks}` : "";
+                createNotification(targetLeave.employeeId, `Your leave request was ${status.toLowerCase()}.${remarkText}`, status === "APPROVED" ? "success" : "error");
+            }
+
+            toast.success(`Leave request ${status.toLowerCase()}`);
+            fetchLeaves();
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to update status");
+        }
+    };
+
+    const handleDownloadPDF = () => {
+        const doc = new jsPDF();
+        doc.setFontSize(18);
+        doc.text("Leave Requests Report", 14, 22);
+        doc.setFontSize(11);
+        doc.text(`Generated on: ${format(new Date(), "PPpp")}`, 14, 30);
+
+        const tableColumn = ["Employee", "Department", "Reason", "Remarks", "Dates", "Status"];
+        const tableRows: any[] = [];
+
+        leaves.forEach((leave) => {
+            const leaveData = [
+                leave.employee?.name || "Unknown",
+                leave.employee?.department || "N/A",
+                leave.reason,
+                leave.managerRemarks || "-",
+                `${format(new Date(leave.startDate), "MMM d")} - ${format(new Date(leave.endDate), "MMM d, y")}`,
+                leave.status,
+            ];
+            tableRows.push(leaveData);
+        });
+
+        autoTable(doc, {
+            head: [tableColumn],
+            body: tableRows,
+            startY: 40,
+            theme: "grid",
+            styles: { fontSize: 9 }, // Slightly smaller font to fit remarks
+            headStyles: { fillColor: [41, 128, 185] },
+        });
+
+        doc.save(`Leave_Report_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+        toast.success("Report downloaded successfully");
+    };
+
+    return (
+        <Layout>
+            <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                    <h1 className="text-3xl font-bold tracking-tight">Leave Management</h1>
+                    <Button onClick={handleDownloadPDF} disabled={leaves.length === 0} variant="outline">
+                        <Download className="mr-2 h-4 w-4" />
+                        Download PDF
+                    </Button>
+                </div>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Employee Leave Requests</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Employee</TableHead>
+                                    <TableHead>Reason</TableHead>
+                                    <TableHead>Remarks</TableHead>
+                                    <TableHead>Dates</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {leaves.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                                            No leave requests found.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    leaves.map((leave) => (
+                                        <TableRow key={leave.id}>
+                                            <TableCell>
+                                                <div>
+                                                    <p className="font-medium">{leave.employee?.name || "Unknown"}</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {leave.employee?.roleTitle} • {leave.employee?.department}
+                                                    </p>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="max-w-[200px]">
+                                                <p className="truncate" title={leave.reason}>{leave.reason}</p>
+                                            </TableCell>
+                                            <TableCell className="max-w-[200px]">
+                                                <p className="truncate text-sm text-gray-500" title={leave.managerRemarks}>{leave.managerRemarks || "-"}</p>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col text-sm">
+                                                    <span>From: {format(new Date(leave.startDate), "MMM d, yyyy")}</span>
+                                                    <span>To: {format(new Date(leave.endDate), "MMM d, yyyy")}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge
+                                                    variant={
+                                                        leave.status === "APPROVED"
+                                                            ? "default"
+                                                            : leave.status === "DECLINED"
+                                                                ? "destructive"
+                                                                : "secondary"
+                                                    }
+                                                    className={
+                                                        leave.status === "APPROVED" ? "bg-green-500 hover:bg-green-600" : ""
+                                                    }
+                                                >
+                                                    {leave.status}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                {leave.status === "PENDING" && (
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            className="bg-green-600 hover:bg-green-700 h-8 w-8 p-0"
+                                                            onClick={() => openActionDialog(leave.id, "APPROVED")}
+                                                            title="Approve"
+                                                        >
+                                                            <Check className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="destructive"
+                                                            className="h-8 w-8 p-0"
+                                                            onClick={() => openActionDialog(leave.id, "DECLINED")}
+                                                            title="Decline"
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+
+                {/* Remarks Dialog */}
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>{actionType === "APPROVED" ? "Approve" : "Decline"} Leave Request</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="remarks">Remarks (Optional)</Label>
+                                <Textarea
+                                    id="remarks"
+                                    placeholder="Add any comments for the employee..."
+                                    value={remarks}
+                                    onChange={(e) => setRemarks(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                            <Button
+                                onClick={handleConfirmAction}
+                                variant={actionType === "DECLINED" ? "destructive" : "default"}
+                                className={actionType === "APPROVED" ? "bg-green-600 hover:bg-green-700" : ""}
+                            >
+                                Confirm
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </div>
+        </Layout>
+    );
+};
+
+export default LeaveManagement;

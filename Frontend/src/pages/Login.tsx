@@ -12,6 +12,25 @@ import { useAuth } from "./AuthContext";
 const COLOR_PRIMARY = "#0000cc";
 const COLOR_ACCENT_ICON = "text-red-500";
 
+// Hardcoded credentials for testing
+const HARDCODED_CREDENTIALS = {
+  projectManager: {
+    email: "pm@dotspeaks.com",
+    password: "pm123456",
+    role: "project_manager"
+  },
+  manager: {
+    email: "manager@dotspeaks.com",
+    password: "manager123",
+    role: "manager"
+  },
+  employee: {
+    email: "employee@dotspeaks.com",
+    password: "employee123",
+    role: "operator"
+  }
+};
+
 export default function Login() {
   const [role, setRole] = useState("");
   const [email, setEmail] = useState("");
@@ -23,9 +42,16 @@ export default function Login() {
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+  // Quick login function for hardcoded credentials
+  const quickLogin = (credentialType: keyof typeof HARDCODED_CREDENTIALS) => {
+    const credentials = HARDCODED_CREDENTIALS[credentialType];
+    setEmail(credentials.email);
+    setPassword(credentials.password);
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast({
         title: "Error",
@@ -38,20 +64,25 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-        credentials: "include",
-      });
+      // Client-side authentication without backend
+      const devUser = HARDCODED_CREDENTIALS.projectManager.email === email ? HARDCODED_CREDENTIALS.projectManager :
+        HARDCODED_CREDENTIALS.manager.email === email ? HARDCODED_CREDENTIALS.manager :
+          HARDCODED_CREDENTIALS.employee.email === email ? HARDCODED_CREDENTIALS.employee :
+            null;
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Login failed");
+      if (!devUser || devUser.password !== password) {
+        throw new Error("Invalid email or password");
       }
+
+      // Generate a mock token and user ID
+      const mockToken = `mock-jwt-token-${Date.now()}`;
+      const mockUserId = email.split("@")[0];
+      const data = {
+        token: mockToken,
+        role: devUser.role,
+        userId: mockUserId,
+        email: email
+      };
 
       // Store JWT and role in localStorage
       localStorage.setItem("token", data.token);
@@ -64,10 +95,10 @@ export default function Login() {
       });
 
       setUser({
-      id: data.userId,
-      email: data.email,
-      role: data.role.toLowerCase(),
-    });
+        id: data.userId,
+        email: data.email,
+        role: data.role.toLowerCase() as "manager" | "operator" | "project_manager",
+      });
 
       // Redirect to dashboard
       navigate(`/${data.role.toLowerCase()}`);
@@ -92,7 +123,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card 
+        <Card
           className="shadow-2xl border-t-4 rounded-xl"
           style={{ borderTopColor: COLOR_PRIMARY }}
         >
@@ -167,22 +198,56 @@ export default function Login() {
                 />
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full h-11 gap-2 text-lg font-semibold shadow-md" 
+              <Button
+                type="submit"
+                className="w-full h-11 gap-2 text-lg font-semibold shadow-md"
                 style={{ backgroundColor: COLOR_PRIMARY }}
                 // Tailwind class for hover effect
-                size="lg" 
+                size="lg"
                 disabled={loading}
               >
                 {loading ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin text-red-500" /> Logging in...</>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin text-red-500" /> Logging in...</>
                 ) : (
-                    <><LogIn className="h-5 w-5 text-red-500" /> Login</>
+                  <><LogIn className="h-5 w-5 text-red-500" /> Login</>
                 )}
               </Button>
 
             </form>
+
+            {/* Quick Login Buttons for Testing */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <p className="text-xs text-gray-500 mb-3 text-center">Quick Login (Development)</p>
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full text-sm"
+                  onClick={() => quickLogin("projectManager")}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Project Manager
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full text-sm"
+                  onClick={() => quickLogin("manager")}
+                >
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Manager
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full text-sm"
+                  onClick={() => quickLogin("employee")}
+                >
+                  <Lock className="h-4 w-4 mr-2" />
+                  Employee
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

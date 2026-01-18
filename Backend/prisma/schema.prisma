@@ -65,6 +65,7 @@ model Employee {
   status     String   @default("Active") // Active / On Leave
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  LeaveRequest LeaveRequest[]
 }
 
 model Task {
@@ -141,4 +142,26 @@ model ExternalIdentity {
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
+model LeaveRequest {
+  id        String      @id @default(cuid())
+  employeeId String
+  employee   Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  
+  reason    String
+  startDate DateTime
+  endDate   DateTime
+  status    LeaveStatus @default(PENDING)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([employeeId])
 }

@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: flowdash-backend
+    env: node
+    plan: free
+    root: Backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production

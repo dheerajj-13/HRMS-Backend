@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 // Added Label and Input imports (assuming standard shadcn path, or use HTML fallback)
-import { Input } from "@/components/ui/input"; 
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Users,
@@ -54,7 +54,7 @@ const backendUrl = import.meta.env.VITE_API_BASE_URL;
 const SkeletonAssignmentDashboard = ({ PRIMARY_COLOR, ACCENT_RED }) => {
   // ... (Keep your existing skeleton code, omitted here for brevity if unchanged, 
   // but ensure you paste the full skeleton code from previous step if copying fresh file)
-   const ManagerSkeletonCard = () => (
+  const ManagerSkeletonCard = () => (
     <Card className="p-3 sm:p-4 border border-gray-100 shadow-sm animate-pulse h-36 sm:h-40">
       <div className="flex justify-between pb-2">
         <div className="space-y-2">
@@ -127,18 +127,20 @@ const SkeletonAssignmentDashboard = ({ PRIMARY_COLOR, ACCENT_RED }) => {
   );
 };
 
+import { createNotification } from "@/lib/notificationSystem";
+
 // --- MAIN DASHBOARD COMPONENT ---
 export default function AssignmentDashboard() {
   const [loading, setLoading] = useState(true);
   const [isAssigning, setIsAssigning] = useState(false);
   const [newEmployees, setNewEmployees] = useState([]);
   const [managers, setManagers] = useState([]);
-  
+
   // Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [selectedManagerId, setSelectedManagerId] = useState("");
-  
+
   // Editable Fields State
   const [editName, setEditName] = useState("");
   const [editDepartment, setEditDepartment] = useState("");
@@ -176,7 +178,7 @@ export default function AssignmentDashboard() {
     return apiNewJoiners.map((emp) => ({
       id: emp.id,
       name: emp.name,
-      role: emp.roleTitle, 
+      role: emp.roleTitle,
       department: emp.department,
     }));
   };
@@ -235,7 +237,7 @@ export default function AssignmentDashboard() {
     // Pre-fill editable fields
     setEditName(employee.name);
     setEditDepartment(employee.department);
-    
+
     setSelectedManagerId("");
     setIsDialogOpen(true);
   };
@@ -246,7 +248,7 @@ export default function AssignmentDashboard() {
 
     const managerId = selectedManagerId;
     const managerIndex = managers.findIndex((m) => m.id === managerId);
-    
+
     if (managerIndex === -1) return;
     const targetManager = managers[managerIndex];
 
@@ -260,7 +262,7 @@ export default function AssignmentDashboard() {
     try {
       // Send updated fields (name, department) along with IDs
       const response = await axios.post(
-        `${backendUrl}/projectManager/employee-assign/assign`, 
+        `${backendUrl}/projectManager/employee-assign/assign`,
         {
           employeeId: selectedEmployee.id,
           managerUserId: managerId,
@@ -272,6 +274,8 @@ export default function AssignmentDashboard() {
           withCredentials: true,
         }
       );
+
+      // ...
 
       if (response.status === 200 || response.status === 201) {
         // Optimistic UI Update
@@ -285,7 +289,7 @@ export default function AssignmentDashboard() {
               id: selectedEmployee.id,
               name: editName, // Use the new edited name for UI
               role: selectedEmployee.role,
-              isNew: true, 
+              isNew: true,
             },
           ],
         };
@@ -295,6 +299,9 @@ export default function AssignmentDashboard() {
           (emp) => emp.id !== selectedEmployee.id
         );
         setNewEmployees(updatedEmployees);
+
+        // NOTIFY ASSIGNED EMPLOYEE
+        createNotification(selectedEmployee.id, `You have been assigned to ${targetManager.name}'s team.`, "success");
 
         setIsDialogOpen(false);
         setSelectedEmployee(null);
@@ -312,9 +319,8 @@ export default function AssignmentDashboard() {
     const isFull = manager.teamSize >= manager.maxCapacity;
     return (
       <Card
-        className={`p-3 sm:p-4 border ${
-          manager.isExpanded ? `border-[${PRIMARY_COLOR}]` : "border-gray-200"
-        } hover:shadow-md transition-all shadow-sm`}
+        className={`p-3 sm:p-4 border ${manager.isExpanded ? `border-[${PRIMARY_COLOR}]` : "border-gray-200"
+          } hover:shadow-md transition-all shadow-sm`}
       >
         <CardHeader className="flex flex-row items-start justify-between p-0 pb-2">
           <div className="flex flex-col">
@@ -356,9 +362,8 @@ export default function AssignmentDashboard() {
             <List className="h-3 w-3 sm:h-4 sm:w-4 mr-2" style={{ color: PRIMARY_COLOR }} />
             View Team Members ({manager.teamMembers.length})
             <ChevronDown
-              className={`h-3 w-3 sm:h-4 sm:w-4 ml-auto transition-transform ${
-                manager.isExpanded ? "rotate-180" : "rotate-0"
-              }`}
+              className={`h-3 w-3 sm:h-4 sm:w-4 ml-auto transition-transform ${manager.isExpanded ? "rotate-180" : "rotate-0"
+                }`}
             />
           </Button>
           {manager.isExpanded && (
@@ -490,7 +495,7 @@ export default function AssignmentDashboard() {
           </DialogHeader>
 
           <div className="space-y-4 pt-4">
-            
+
             {/* 1. Name Input (Editable) */}
             <div className="space-y-2">
               <Label htmlFor="empName" className="text-sm font-medium text-gray-700">
@@ -517,8 +522,8 @@ export default function AssignmentDashboard() {
               />
             </div>
 
-             {/* 3. Role (Read Only - Badge) */}
-             <div className="flex items-center justify-between p-3 rounded-md border bg-gray-50 text-sm mt-2">
+            {/* 3. Role (Read Only - Badge) */}
+            <div className="flex items-center justify-between p-3 rounded-md border bg-gray-50 text-sm mt-2">
               <span className="font-medium text-gray-700">Current Role:</span>
               <Badge variant="outline" className="bg-white text-gray-600 border-gray-300">
                 {selectedEmployee?.role}
@@ -554,11 +559,11 @@ export default function AssignmentDashboard() {
           </div>
 
           <DialogFooter className="mt-6">
-            <Button 
-                variant="outline" 
-                onClick={() => setIsDialogOpen(false)} 
-                className="text-sm h-9"
-                disabled={isAssigning}
+            <Button
+              variant="outline"
+              onClick={() => setIsDialogOpen(false)}
+              className="text-sm h-9"
+              disabled={isAssigning}
             >
               Cancel
             </Button>

@@ -6,9 +6,12 @@ const Index = () => {
 
   useEffect(() => {
     const userRole = localStorage.getItem("userRole");
-    if (userRole) {
+    const validRoles = ["manager", "project_manager", "operator"];
+
+    if (userRole && validRoles.includes(userRole)) {
       navigate(`/${userRole}`);
     } else {
+      localStorage.clear();
       navigate("/login");
     }
   }, [navigate]);

@@ -8,6 +8,71 @@ import { auth } from "../middleware/auth";
 
 const router = Router();
 
+// Development-only login route with hardcoded credentials
+const HARDCODED_DEV_USERS = {
+  "pm@dotspeaks.com": { password: "pm123456", role: "MANAGER", name: "Project Manager" },
+  "manager@dotspeaks.com": { password: "manager123", role: "MANAGER", name: "Manager" },
+  "employee@dotspeaks.com": { password: "employee123", role: "OPERATOR", name: "Employee" }
+};
+
+router.post("/dev-login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password)
+      return res.status(400).json({ error: "email & password required" });
+
+    // Check if user exists in hardcoded credentials
+    const devUser = HARDCODED_DEV_USERS[email as keyof typeof HARDCODED_DEV_USERS];
+
+    if (!devUser || devUser.password !== password) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    // Find or create user in database
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email,
+          password: "", // No password needed for dev users
+          role: devUser.role as any,
+        },
+      });
+
+      // Create employee profile if needed
+      if (devUser.role === "MANAGER" || devUser.role === "OPERATOR") {
+        await prisma.employee.create({
+          data: {
+            userId: user.id,
+            name: devUser.name,
+            roleTitle: devUser.role,
+            department: null,
+            managerId: null,
+          },
+        });
+      }
+    }
+
+    // Generate JWT token
+    const appToken = jwt.sign(
+      { id: user.id, role: user.role, email: user.email },
+      process.env.JWT_SECRET || "dev-secret-key-change-in-production",
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      token: appToken,
+      role: user.role,
+      userId: user.id,
+      email: user.email,
+    });
+  } catch (e: any) {
+    console.error(e);
+    res.status(500).json({ error: e?.message || "login failed" });
+  }
+});
+
 router.post("/register", async (req, res) => {
   try {
     const { email, password, role, name, roleTitle, department } = req.body;
@@ -230,7 +295,7 @@ router.get("/me", auth, async (req, res) => {
       email: user.email,
       role: user.role,
     });
-  } catch (error) {}
+  } catch (error) { }
 });
 
 router.get("/go-to-hrm", ensureFreshKeycloakToken, async (req, res) => {

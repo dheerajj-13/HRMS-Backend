@@ -311,7 +311,7 @@ const SkillsAchievements = ({ data }: { data: PerformanceData }) => (
         Top Skills
       </CardTitle>
       <div className="space-y-3 sm:space-y-4">
-        {data.skills.map((skill) => (
+        {(data?.skills || []).map((skill) => (
           <div key={skill.skill}>
             <div className="flex justify-between text-xs sm:text-sm mb-1">
               <span className="font-medium text-gray-800">{skill.skill}</span>
@@ -340,7 +340,7 @@ const SkillsAchievements = ({ data }: { data: PerformanceData }) => (
         Recent Achievements
       </CardTitle>
       <div className="space-y-3 sm:space-y-4">
-        {data.achievements.map((ach) => {
+        {(data?.achievements || []).map((ach) => {
           const IconComponent = getIconComponent(ach.icon);
           return (
             <div
@@ -381,11 +381,11 @@ export default function EmployeePerformanceDashboard() {
       const res = await axios.get(`${API_BASE_URL}/employees/performance`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       // Backend returns roleTitle, map to role for frontend consistency
       const formattedEmployees = res.data.employees.map((emp: any) => ({
         ...emp,
-        role: emp.roleTitle || "Unknown Role" 
+        role: emp.roleTitle || "Unknown Role"
       }));
 
       setEmployees(formattedEmployees);
@@ -411,7 +411,7 @@ export default function EmployeePerformanceDashboard() {
     setLoadingPerformance(true);
     // Set basic info immediately so UI updates while loading data
     setSelectedEmployee(employeeInfo);
-    
+
     try {
       const res = await axios.get(
         `${API_BASE_URL}/employees/${employeeId}/performance`,
@@ -549,11 +549,10 @@ export default function EmployeePerformanceDashboard() {
                 filteredEmployees.map((employee) => (
                   <div
                     key={employee.id}
-                    className={`p-3 sm:p-4 rounded-lg cursor-pointer flex items-center justify-between transition-all duration-150 text-sm ${
-                      selectedEmployee?.id === employee.id
-                        ? `text-white shadow-md`
-                        : "hover:bg-gray-100 border border-gray-200"
-                    }`}
+                    className={`p-3 sm:p-4 rounded-lg cursor-pointer flex items-center justify-between transition-all duration-150 text-sm ${selectedEmployee?.id === employee.id
+                      ? `text-white shadow-md`
+                      : "hover:bg-gray-100 border border-gray-200"
+                      }`}
                     style={
                       selectedEmployee?.id === employee.id ? primaryBgStyle : {}
                     }
@@ -563,22 +562,20 @@ export default function EmployeePerformanceDashboard() {
                   >
                     <div className="flex items-center gap-3">
                       <User
-                        className={`h-4 w-4 sm:h-5 sm:w-5 ${
-                          selectedEmployee?.id === employee.id
-                            ? COLOR_ACCENT_ICON
-                            : `text-blue-700`
-                        }`}
+                        className={`h-4 w-4 sm:h-5 sm:w-5 ${selectedEmployee?.id === employee.id
+                          ? COLOR_ACCENT_ICON
+                          : `text-blue-700`
+                          }`}
                       />
                       <div>
                         <h4 className="font-semibold leading-none">
                           {employee.name}
                         </h4>
                         <p
-                          className={`text-xs ${
-                            selectedEmployee?.id === employee.id
-                              ? "text-white/80"
-                              : "text-gray-500"
-                          }`}
+                          className={`text-xs ${selectedEmployee?.id === employee.id
+                            ? "text-white/80"
+                            : "text-gray-500"
+                            }`}
                         >
                           {employee.role}
                         </p>
@@ -635,8 +632,8 @@ export default function EmployeePerformanceDashboard() {
                       />{" "}
                       Weekly Hours Breakdown
                     </CardTitle>
-                    <ResponsiveContainer width="100%" height={200}>
-                      {selectedEmployee?.performance?.weeklyHours && (
+                    {selectedEmployee?.performance?.weeklyHours && selectedEmployee.performance.weeklyHours.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={200}>
                         <BarChart
                           data={selectedEmployee.performance.weeklyHours}
                         >
@@ -662,8 +659,12 @@ export default function EmployeePerformanceDashboard() {
                             radius={[4, 4, 0, 0]}
                           />
                         </BarChart>
-                      )}
-                    </ResponsiveContainer>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[200px] flex items-center justify-center text-gray-400 text-sm">
+                        No data available
+                      </div>
+                    )}
                   </Card>
 
                   {/* Task Completion Trend */}
@@ -677,8 +678,8 @@ export default function EmployeePerformanceDashboard() {
                       />{" "}
                       Task Completion Trend
                     </CardTitle>
-                    <ResponsiveContainer width="100%" height={200}>
-                      {selectedEmployee?.performance?.completionTrend && (
+                    {selectedEmployee?.performance?.completionTrend && selectedEmployee.performance.completionTrend.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={200}>
                         <LineChart
                           data={selectedEmployee.performance.completionTrend}
                         >
@@ -706,8 +707,12 @@ export default function EmployeePerformanceDashboard() {
                             dot={{ fill: COLOR_SUCCESS, r: 4 }}
                           />
                         </LineChart>
-                      )}
-                    </ResponsiveContainer>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[200px] flex items-center justify-center text-gray-400 text-sm">
+                        No data available
+                      </div>
+                    )}
                   </Card>
                 </div>
 

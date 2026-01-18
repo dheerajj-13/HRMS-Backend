@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import {
@@ -9,10 +9,21 @@ import {
   LogOut,
   Clock,
   PersonStanding,
-  Menu, 
-  X, 
+  Menu,
+  X,
+  CalendarDays,
+  Bell
 } from "lucide-react";
 import { useAuth } from "@/pages/AuthContext";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { getNotifications, markAsRead, Notification } from "@/lib/notificationSystem";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatDistanceToNow } from "date-fns";
 
 interface LayoutProps {
   children: ReactNode;
@@ -21,14 +32,60 @@ interface LayoutProps {
 // --- LOGO VARIABLES ---
 const DESKTOP_LOGO_URL = "https://i0.wp.com/dotspeaks.com/wp-content/uploads/2025/07/Dotspeaks-logo_bg.png?fit=2560%2C591&ssl=1";
 // Placeholder for mobile logo based on your image
-const MOBILE_LOGO_PLACEHOLDER = "D"; 
+const MOBILE_LOGO_PLACEHOLDER = "D";
 // ----------------------
 
 export const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, loading, setUser,  } = useAuth();
+  const { user, loading, setUser, } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (user) {
+      updateNotifications();
+      window.addEventListener("storage", updateNotifications);
+      return () => window.removeEventListener("storage", updateNotifications);
+    }
+  }, [user]);
+
+  const updateNotifications = () => {
+    if (user) {
+      // Fetch for specific User ID OR their Role (e.g. "MANAGER")
+      const all = getNotifications(user.id);
+
+      // Also fetch role-based ones manually since helper filters strict equality usually, 
+      // but my helper `getNotifications` implementation actually looked like:
+      // return all.filter(n => n.userId === currentUserId || n.userId === "ALL")
+      // I should update it to also check role? 
+      // OR hack: I'll just modify getNotifications in `notificationSystem.ts` to be smarter?
+      // No, I can't easily modify the helper loop from here.
+      // I will just fetch ALL and filter here for flexibility.
+      // Wait, `getNotifications` inside `notificationSystem.ts` filters.
+      // I should update `notificationSystem.ts` instead to be more flexible?
+      // Or just pass the role to `getNotifications`?
+      // Let's just update `notificationSystem.ts` quickly using `replace_file_content` after this?
+      // actually I'll update the helper first.
+      // Wait, I cannot change order of tool calls in my head.
+      // I'll stick to updating the layout to pass the role if I change the helper signature?
+      // Easier: Custom filter in Layout.
+      // But `getNotifications` returns filtered list.
+      // I will update `notificationSystem.ts` to accept an optional `role` param.
+
+      // ... For now, let's assume I fixed the helper to accept role or I'll fix it in next step.
+      // I will call `getNotifications(user.id, user.role)`.
+      const allNotificationsForUser = getNotifications(user.id, user.role);
+      setNotifications(allNotificationsForUser);
+      setUnreadCount(allNotificationsForUser.filter(n => !n.read).length);
+    }
+  };
+
+  const handleMarkAsRead = (id: string) => {
+    markAsRead(id);
+    updateNotifications();
+  };
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (!user) return <div className="p-6">Unauthorized</div>;
@@ -50,36 +107,38 @@ export const Layout = ({ children }: LayoutProps) => {
   const getNavItems = () => {
     // ... (Navigation logic remains the same)
     const common = [
-        { icon: LayoutDashboard, label: "Dashboard", path: `/${role}` },
+      { icon: LayoutDashboard, label: "Dashboard", path: `/${role}` },
     ];
 
     if (role === "manager") {
-        return [
-          ...common,
-          { icon: Users, label: "Employees", path: "/tasks" },
-          { icon: Clock, label: "My Task", path: "/timesheet" },
-          { icon: BarChart3, label: "Performance", path: "/performance" },
-          { icon: FileText, label: "Reports", path: "/manager/reports" },
-          { icon: PersonStanding, label: "My HRM", path: "/manager/hrm" },
-        ];
+      return [
+        ...common,
+        { icon: Users, label: "Employees", path: "/tasks" },
+        { icon: Clock, label: "My Task", path: "/timesheet" },
+        { icon: BarChart3, label: "Performance", path: "/performance" },
+        { icon: FileText, label: "Reports", path: "/manager/reports" },
+        { icon: PersonStanding, label: "My HRM", path: "/manager/hrm" },
+        { icon: CalendarDays, label: "Leave Requests", path: "/manager/leaves" },
+      ];
     }
 
     if (role === "project_manager") {
-        return [
-          ...common,
-          { icon: Users, label: "Managers", path: "/tasks" },
-          { icon: BarChart3, label: "Performance", path: "/performance" },
-          { icon: PersonStanding, label: "Employee Assign", path: "/project_manager/employee-assignment" },
-          { icon: FileText, label: "Reports", path: "/manager/reports" },
-        ];
+      return [
+        ...common,
+        { icon: Users, label: "Managers", path: "/tasks" },
+        { icon: BarChart3, label: "Performance", path: "/performance" },
+        { icon: PersonStanding, label: "Employee Assign", path: "/project_manager/employee-assignment" },
+        { icon: FileText, label: "Reports", path: "/manager/reports" },
+      ];
     }
 
     if (role === "operator") {
-        return [
-          ...common,
-          { icon: Clock, label: "My Task", path: "/timesheet" },
-          { icon: PersonStanding, label: "My HRM", path: "/operator/hrm" },
-        ];
+      return [
+        ...common,
+        { icon: Clock, label: "My Task", path: "/timesheet" },
+        { icon: PersonStanding, label: "My HRM", path: "/operator/hrm" },
+        { icon: CalendarDays, label: "Apply Leave", path: "/operator/leaves" },
+      ];
     }
 
     return [];
@@ -89,22 +148,29 @@ export const Layout = ({ children }: LayoutProps) => {
 
   return (
     // Set min-h-screen on the overall container
-    <div className="min-h-screen bg-background"> 
-      
+    <div className="min-h-screen bg-background">
+
       {/* 🔴 MOBILE HEADER (Hamburger left, Logo right) 🔴 */}
       <header className="lg:hidden sticky top-0 z-50 bg-white shadow-md p-4 flex items-center justify-between">
         {/* Hamburger Icon (Left) */}
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="text-[#2a00b7] hover:bg-gray-100 order-1" 
+          className="text-[#2a00b7] hover:bg-gray-100 order-1"
         >
           {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </Button>
         {/* Mobile Logo (Right) */}
-        <div className="h-8 w-8 bg-red-600 rounded-full flex items-center justify-center text-white text-lg font-bold order-2"> 
-             {MOBILE_LOGO_PLACEHOLDER} 
+        <div className="flex items-center gap-4 order-2">
+          <NotificationBell
+            count={unreadCount}
+            notifications={notifications}
+            onRead={handleMarkAsRead}
+          />
+          <div className="h-8 w-8 bg-red-600 rounded-full flex items-center justify-center text-white text-lg font-bold">
+            {MOBILE_LOGO_PLACEHOLDER}
+          </div>
         </div>
       </header>
 
@@ -133,21 +199,18 @@ export const Layout = ({ children }: LayoutProps) => {
             return (
               <Link key={item.path} to={item.path} onClick={() => setIsSidebarOpen(false)}>
                 <div
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium cursor-pointer transition-all duration-200 ${
-                    isActive
-                      ? "bg-white text-[#2a00b7]"
-                      : "text-white hover:bg-white/10"
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium cursor-pointer transition-all duration-200 ${isActive
+                    ? "bg-white text-[#2a00b7]"
+                    : "text-white hover:bg-white/10"
+                    }`}
                 >
                   <Icon
-                    className={`h-5 w-5 transition-colors duration-200 ${
-                      isActive ? "text-red-500" : "text-white"
-                    }`}
+                    className={`h-5 w-5 transition-colors duration-200 ${isActive ? "text-red-500" : "text-white"
+                      }`}
                   />
                   <span
-                    className={`transition-colors duration-200 ${
-                      isActive ? "text-[#2a00b7]" : "text-white"
-                    }`}
+                    className={`transition-colors duration-200 ${isActive ? "text-[#2a00b7]" : "text-white"
+                      }`}
                   >
                     {item.label}
                   </span>
@@ -181,7 +244,7 @@ export const Layout = ({ children }: LayoutProps) => {
 
       {/* Backdrop for mobile */}
       {isSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-30 bg-black/50 lg:hidden"
           onClick={() => setIsSidebarOpen(false)}
         ></div>
@@ -189,11 +252,23 @@ export const Layout = ({ children }: LayoutProps) => {
 
       {/* 🟢 MAIN CONTENT - **Handles the left margin offset on large screens** 🟢 */}
       {/* Scrollable content area starts here */}
-      <main className="lg:ml-60 flex-1 overflow-y-auto min-h-screen">
+      <main className="lg:ml-60 flex-1 overflow-y-auto min-h-screen flex flex-col">
+        {/* Desktop Header for Notification */}
+        <div className="hidden lg:flex justify-end p-4 border-b bg-white">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-gray-600">Welcome, {(user as any).name || user.email}</span>
+            <NotificationBell
+              count={unreadCount}
+              notifications={notifications}
+              onRead={handleMarkAsRead}
+            />
+          </div>
+        </div>
+
         <div
           className={
             location.pathname.includes("/hrm")
-              ? "pt-6 pl-2 pr-6" 
+              ? "pt-6 pl-2 pr-6"
               : "p-4 sm:p-6 md:p-8"
           }
         >
@@ -201,5 +276,55 @@ export const Layout = ({ children }: LayoutProps) => {
         </div>
       </main>
     </div>
+  );
+};
+
+const NotificationBell = ({ count, notifications, onRead }: { count: number, notifications: Notification[], onRead: (id: string) => void }) => {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative">
+          <Bell className="h-5 w-5" />
+          {count > 0 && (
+            <span className="absolute top-0 right-0 h-4 w-4 bg-red-600 text-[10px] text-white flex items-center justify-center rounded-full animate-pulse">
+              {count}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-0">
+        <div className="p-4 border-b">
+          <h4 className="font-semibold leading-none">Notifications</h4>
+          <p className="text-sm text-muted-foreground mt-1">You have {count} unread messages.</p>
+        </div>
+        <ScrollArea className="h-80">
+          {notifications.length === 0 ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              No notifications yet.
+            </div>
+          ) : (
+            <div className="divide-y">
+              {notifications.map((n) => (
+                <div
+                  key={n.id}
+                  className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${!n.read ? 'bg-blue-50/50' : ''}`}
+                  onClick={() => onRead(n.id)}
+                >
+                  <div className="flex gap-3">
+                    <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${!n.read ? 'bg-blue-600' : 'bg-transparent'}`} />
+                    <div className="space-y-1">
+                      <p className={`text-sm ${!n.read ? 'font-medium' : ''}`}>{n.message}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
   );
 };
